@@ -19,7 +19,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch()),
     importProvidersFrom(
       ApiModule.forRoot(() => new Configuration({
-        // basePath: API_BASE_PATH
+        basePath: API_BASE_PATH
       }))
     )
   ]
