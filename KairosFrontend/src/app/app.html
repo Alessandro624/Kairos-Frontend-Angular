@@ -5,6 +5,13 @@
         <a routerLink="/home" class="navbar-brand">
           <img class="img-fluid custom-width" src="assets/logo/favicon.ico" alt="Home">
         </a>
+        <div>
+          @if (isLoggedIn()) {
+            <button class="btn btn-outline-danger" (click)="logout()">Logout</button>
+          } @else {
+            <button class="btn btn-outline-primary" routerLink="/login">Login</button>
+          }
+        </div>
       </div>
     </nav>
   </header>
