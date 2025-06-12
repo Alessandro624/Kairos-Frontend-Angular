@@ -1,0 +1,13 @@
+export * from './authentication.service';
+import { AuthenticationService } from './authentication.service';
+export * from './eventController.service';
+import { EventControllerService } from './eventController.service';
+export * from './sectorController.service';
+import { SectorControllerService } from './sectorController.service';
+export * from './structureController.service';
+import { StructureControllerService } from './structureController.service';
+export * from './users.service';
+import { UsersService } from './users.service';
+export * from './wishlistController.service';
+import { WishlistControllerService } from './wishlistController.service';
+export const APIS = [AuthenticationService, EventControllerService, SectorControllerService, StructureControllerService, UsersService, WishlistControllerService];
