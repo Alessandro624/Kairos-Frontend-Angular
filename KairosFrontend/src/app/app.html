@@ -1,0 +1,20 @@
+<div class="d-flex flex-column min-vh-100">
+  <header class="navbar sticky-top bg-white border-bottom shadow-sm">
+    <nav class="navbar navbar-expand navbar-light w-100">
+      <div class="container-fluid d-flex justify-content-between align-items-center">
+        <a routerLink="/home" class="navbar-brand">
+          <img class="img-fluid custom-width" src="assets/logo/favicon.ico" alt="Home">
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="flex-grow-1">
+    <router-outlet></router-outlet>
+  </main>
+  <footer class="bg-dark text-white text-center py-3 mt-4">
+    <div class="container">
+      <p class="mb-0">© {{ currentYear }} {{ title }} - All Rights Reserved</p>
+    </div>
+  </footer>
+</div>

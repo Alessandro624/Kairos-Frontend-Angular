@@ -1,0 +1,10 @@
+.navbar {
+  z-index: 1000;
+  padding: 0;
+}
+
+.custom-width {
+  width: 35%;
+  height: auto;
+  min-width: 50px;
+}
