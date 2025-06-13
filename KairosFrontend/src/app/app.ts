@@ -1,5 +1,6 @@
-import {Component} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {RouterLink, RouterOutlet} from '@angular/router';
+import {AuthenticationService} from './services';
 
 @Component({
   selector: 'app-root',
@@ -7,35 +8,22 @@ import {RouterLink, RouterOutlet} from '@angular/router';
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App {
+export class App implements OnInit {
   protected title: string = 'Kairos';
   protected currentYear: number = new Date().getFullYear();
+  protected isLoggedIn: boolean = false;
 
-  isLoggedIn(): boolean {
-    const authToken = localStorage.getItem('auth_token');
-    const expiryDateString = localStorage.getItem('auth_token_expiry');
+  constructor(private authService: AuthenticationService) {
+  }
 
-    if (!authToken || !expiryDateString) {
-      return false;
-    }
-
-    const expiryDate = new Date(expiryDateString);
-    const now = new Date();
-
-    if (expiryDate <= now) {
-      console.warn('Auth token expired.');
-      this.logout();
-      return false;
-    }
-
-    return true;
+  ngOnInit(): void {
+    this.authService.isAuthenticated().subscribe((isAuthenticated: boolean) => {
+      this.isLoggedIn = isAuthenticated;
+    });
   }
 
   logout(): void {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('auth_token_expiry');
-
+    this.authService.logout();
     console.log('User logged out.');
   }
 }

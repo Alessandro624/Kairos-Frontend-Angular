@@ -12,21 +12,18 @@
 
 import {Inject, Injectable, Optional} from '@angular/core';
 import {
-  HttpClient, HttpHeaders, HttpParams,
-  HttpResponse, HttpEvent
+  HttpClient, HttpHeaders, HttpResponse, HttpEvent
 } from '@angular/common/http';
-import {CustomHttpUrlEncodingCodec} from '../encoder';
 
-import {Observable} from 'rxjs';
+import {BehaviorSubject, catchError, finalize, from, Observable, switchMap, tap, throwError, timer} from 'rxjs';
 
 import {AuthRequest} from '../model/authRequest';
 import {AuthResponse} from '../model/authResponse';
 import {PasswordResetConfirmation} from '../model/passwordResetConfirmation';
 import {PasswordResetRequest} from '../model/passwordResetRequest';
-import {ServiceError} from '../model/serviceError';
 import {UserCreateDTO} from '../model/userCreateDTO';
 
-import {BASE_PATH, COLLECTION_FORMATS} from '../variables';
+import {BASE_PATH} from '../variables';
 import {Configuration} from '../configuration';
 
 
@@ -36,6 +33,13 @@ export class AuthenticationService {
   protected basePath = 'http://localhost:8080';
   public defaultHeaders = new HttpHeaders();
   public configuration = new Configuration();
+  private accessTokenKey: string = "token";
+  private authTokenExpiryKey: string = "auth_token_expiry";
+  private refreshTokenKey: string = "refresh_token";
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.isTokenCurrentlyValid());
+  private isRefreshingToken = false;
+  private refreshTokenPromise: Promise<AuthResponse> | null = null;
+  private refreshTimer: any;
 
   constructor(protected httpClient: HttpClient, @Optional() @Inject(BASE_PATH) basePath: string, @Optional() configuration: Configuration) {
     if (basePath) {
@@ -45,6 +49,7 @@ export class AuthenticationService {
       this.configuration = configuration;
       this.basePath = basePath || configuration.basePath || this.basePath;
     }
+    this.scheduleTokenRefresh();
   }
 
   /**
@@ -362,15 +367,148 @@ export class AuthenticationService {
     }
   }
 
-  setTokens(token: string, refreshToken: string): void {
-    localStorage.setItem('token', token);
-    localStorage.setItem('refreshToken', refreshToken);
-    const decodedAuthToken = this.decodeJwt(token);
+  setTokens(accessToken: string, refreshToken: string): void {
+    localStorage.setItem(this.accessTokenKey, accessToken);
+    localStorage.setItem(this.refreshTokenKey, refreshToken);
+
+    const decodedAuthToken = this.decodeJwt(accessToken);
     if (decodedAuthToken && decodedAuthToken.exp) {
       const authExpiresAt = new Date(decodedAuthToken.exp * 1000);
-      localStorage.setItem('auth_token_expiry', authExpiresAt.toISOString());
+      localStorage.setItem(this.authTokenExpiryKey, authExpiresAt.toISOString());
     } else {
-      console.warn('Invalid claim "exp"');
+      console.warn('Invalid claim "exp" in JWT token. Cannot set expiry date.');
+      localStorage.removeItem(this.authTokenExpiryKey);
+    }
+    this.isAuthenticatedSubject.next(this.isTokenCurrentlyValid());
+    this.scheduleTokenRefresh();
+  }
+
+  logout(): void {
+    localStorage.removeItem(this.accessTokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
+    localStorage.removeItem(this.authTokenExpiryKey);
+    this.isAuthenticatedSubject.next(false);
+
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+
+    this.isRefreshingToken = false;
+    this.refreshTokenPromise = null;
+  }
+
+  private isTokenCurrentlyValid(): boolean {
+    const token = localStorage.getItem(this.accessTokenKey);
+    const expiryDateString = localStorage.getItem(this.authTokenExpiryKey);
+
+    if (!token || !expiryDateString) {
+      return false;
+    }
+
+    try {
+      const expiryDate = new Date(expiryDateString);
+      const now = new Date();
+      return expiryDate > now;
+    } catch (e) {
+      console.error('Error parsing expiry date from localStorage:', e);
+      return false;
+    }
+  }
+
+  isAuthenticated(): Observable<boolean> {
+    return this.isAuthenticatedSubject.asObservable();
+  }
+
+  public refreshAccessToken(): Observable<AuthResponse> {
+    const refreshToken = localStorage.getItem(this.refreshTokenKey);
+    if (!refreshToken) {
+      console.warn('No refresh token available. Logging out.');
+      this.logout();
+      return throwError(() => new Error('No refresh token available.'));
+    }
+
+    if (this.isRefreshingToken && this.refreshTokenPromise) {
+      return from(this.refreshTokenPromise);
+    }
+
+    this.isRefreshingToken = true;
+    this.refreshTokenPromise = new Promise<AuthResponse>((resolve, reject) => {
+      this.refresh({refreshToken: refreshToken}).pipe(
+        tap(response => {
+          this.setTokens(response.token, response.refreshToken);
+          this.isAuthenticatedSubject.next(true);
+          resolve(response);
+        }),
+        catchError(error => {
+          console.error('Refresh token failed:', error);
+          this.logout();
+          reject(error);
+          return throwError(() => new Error('Refresh token failed: ' + (error.error?.message || error.message)));
+        }),
+        finalize(() => {
+          this.isRefreshingToken = false;
+          this.refreshTokenPromise = null;
+        })
+      ).subscribe();
+    });
+
+    return from(this.refreshTokenPromise);
+  }
+
+  private scheduleTokenRefresh(): void {
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+
+    const token = localStorage.getItem(this.accessTokenKey);
+    const expiryDateString = localStorage.getItem(this.authTokenExpiryKey);
+    const refreshToken = localStorage.getItem(this.refreshTokenKey);
+
+    if (!token || !expiryDateString) {
+      console.log('No access token or expiry date found to schedule refresh.');
+      this.isAuthenticatedSubject.next(false);
+      return;
+    }
+
+    try {
+      const decoded = this.decodeJwt(token)!;
+      const expirationTimeMs = decoded.exp * 1000;
+      const now = Date.now();
+
+      const refreshBufferMs = 5 * 60 * 1000;
+
+      let refreshInMs = expirationTimeMs - now - refreshBufferMs;
+
+      if (refreshInMs <= 10 * 1000) {
+        console.log('Token is already expired or very close to expiration (within buffer). Attempting immediate refresh.');
+
+        if (!this.isRefreshingToken && refreshToken) {
+          this.refreshAccessToken().subscribe({
+            next: () => console.log('Immediate token refresh successful.'),
+            error: (err) => console.error('Immediate token refresh failed:', err)
+          });
+        } else {
+          console.log('Immediate refresh not performed: A refresh is already in progress or no refresh token.');
+          if (!refreshToken) {
+            this.logout();
+          }
+        }
+      } else {
+        console.log(`Scheduling token refresh in ${Math.ceil(refreshInMs / 1000)} seconds.`);
+        this.refreshTimer = timer(refreshInMs).pipe(
+          switchMap(() => this.refreshAccessToken()),
+          catchError(err => {
+            console.warn('Error refresh token:', err);
+
+            return throwError(() => err);
+          })
+        ).subscribe();
+      }
+    } catch (e) {
+      console.error('Error during decoding for refresh token:', e);
+      this.logout();
     }
   }
 }
