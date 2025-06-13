@@ -17,7 +17,8 @@ import {NgIf} from '@angular/common';
 })
 export class Login implements OnInit {
   loginForm!: FormGroup;
-  errorMessage: string = '';
+  errorMessage: string | null = null;
+  isLoading: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -34,36 +35,43 @@ export class Login implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.loginForm.valid) {
-      const authRequest = {
-        usernameOrEmail: this.loginForm.get('usernameOrEmail')?.value,
-        password: this.loginForm.get('password')?.value
-      };
-
-      this.authService.login(authRequest).subscribe({
-        next: (response) => {
-          const authToken = response.token;
-          const refreshToken = response.refreshToken;
-
-          if (authToken && refreshToken) {
-            this.authService.setTokens(authToken, refreshToken);
-            this.router.navigate(['/home']).then(() => console.log('Login successful'));
-          } else {
-            this.errorMessage = 'Autenticazione non avvenuta. Riprova';
-            console.error("Authentication tokens not found in response.");
-            this.router.navigate(['/login']).then(() => console.log('Retry login'));
-          }
-        },
-        error: (error) => {
-          console.error('Error during login:', error);
-          if (error.status === 400 || error.status === 401) {
-            this.errorMessage = 'Credenziali non valide. Riprova.';
-          } else {
-            this.errorMessage = 'Si è verificato un errore durante l\'accesso. Riprova più tardi.';
-          }
-        }
-      });
+    this.errorMessage = null;
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
     }
+
+    this.isLoading = true;
+    const authRequest = {
+      usernameOrEmail: this.loginForm.get('usernameOrEmail')?.value,
+      password: this.loginForm.get('password')?.value
+    };
+
+    this.authService.login(authRequest).subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        const authToken = response.token;
+        const refreshToken = response.refreshToken;
+
+        if (authToken && refreshToken) {
+          this.authService.setTokens(authToken, refreshToken);
+          this.router.navigate(['/home']).then(() => console.log('Login successful'));
+        } else {
+          this.errorMessage = 'Autenticazione non avvenuta. Riprova';
+          console.error("Authentication tokens not found in response.");
+          this.router.navigate(['/login']).then(() => console.log('Retry login'));
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Error during login:', error);
+        if (error.status === 400 || error.status === 401) {
+          this.errorMessage = 'Credenziali non valide. Riprova.';
+        } else {
+          this.errorMessage = 'Si è verificato un errore durante l\'accesso. Riprova più tardi.';
+        }
+      }
+    });
   }
 
   loginWithGoogle() {

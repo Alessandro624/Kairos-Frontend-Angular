@@ -40,7 +40,11 @@
               </div>
             </div>
             <div class="d-grid mb-3">
-              <button type="submit" class="btn btn-primary btn-lg" [disabled]="loginForm.invalid">Accedi</button>
+              <button type="submit" class="btn btn-primary btn-lg" [disabled]="loginForm.invalid || isLoading">
+                <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
+                      aria-hidden="true"></span>
+                {{ isLoading ? 'Accesso in corso...' : 'Accedi' }}
+              </button>
             </div>
           </form>
 

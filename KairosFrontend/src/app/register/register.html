@@ -1,0 +1,171 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+      <div class="card shadow-lg border-0">
+        <div class="position-absolute top-0 start-0 m-3">
+          <a routerLink="/login" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
+             style="min-width: 45px; min-height: 45px;">
+            <i class="fas fa-arrow-left text-white fs-5"></i>
+          </a>
+        </div>
+        <div class="card-header bg-primary text-white text-center py-4">
+          <h3 class="mb-0">Crea il tuo Account</h3>
+        </div>
+        <div class="card-body p-4">
+          <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+            <div *ngIf="currentStep === 1">
+              <p class="text-center text-muted mb-4">Iniziamo con le tue informazioni personali.</p>
+              <div class="form-floating mb-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="firstName"
+                  formControlName="firstName"
+                  placeholder="Nome"
+                >
+                <label for="firstName">Nome</label>
+                <div *ngIf="registrationForm.get('firstName')?.invalid && registrationForm.get('firstName')?.touched"
+                     class="text-danger small mt-1">
+                  <div *ngIf="registrationForm.get('firstName')?.errors?.['required']">Il nome è obbligatorio.</div>
+                  <div
+                    *ngIf="registrationForm.get('firstName')?.errors?.['minlength'] || registrationForm.get('firstName')?.errors?.['maxlength']">
+                    Il nome deve avere tra 2 e 50 caratteri.
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-floating mb-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="lastName"
+                  formControlName="lastName"
+                  placeholder="Cognome"
+                >
+                <label for="lastName">Cognome</label>
+                <div *ngIf="registrationForm.get('lastName')?.invalid && registrationForm.get('lastName')?.touched"
+                     class="text-danger small mt-1">
+                  <div *ngIf="registrationForm.get('lastName')?.errors?.['required']">Il cognome è obbligatorio.</div>
+                  <div
+                    *ngIf="registrationForm.get('lastName')?.errors?.['minlength'] || registrationForm.get('lastName')?.errors?.['maxlength']">
+                    Il cognome deve avere tra 2 e 50 caratteri.
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-grid">
+                <button type="button" class="btn btn-primary btn-lg"
+                        [disabled]="registrationForm.get('firstName')?.invalid || registrationForm.get('lastName')?.invalid || isLoading"
+                        (click)="nextStep()">
+                  <span *ngIf="isLoading && currentStep === 1" class="spinner-border spinner-border-sm me-2"
+                        role="status" aria-hidden="true"></span>
+                  Avanti
+                </button>
+              </div>
+            </div>
+
+            <div *ngIf="currentStep === 2">
+              <p class="text-center text-muted mb-4">Quasi fatto! Scegli le tue credenziali.</p>
+
+              <div class="form-floating mb-3">
+                <input
+                  type="text"
+                  class="form-control"
+                  id="username"
+                  formControlName="username"
+                  placeholder="Username"
+                >
+                <label for="username">Username</label>
+                <div *ngIf="isFieldInvalid('username')" class="text-danger small mt-1">
+                  <div *ngIf="registrationForm.get('username')?.errors?.['required']">L'username è obbligatorio.
+                  </div>
+                  <div
+                    *ngIf="registrationForm.get('username')?.errors?.['minlength'] || registrationForm.get('username')?.errors?.['maxlength']">
+                    L'username deve avere tra 4 e 30 caratteri.
+                  </div>
+                  <div *ngIf="registrationForm.get('username')?.errors?.['pattern']">L'username può contenere solo
+                    lettere, numeri, punti, underscore e trattini.
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-floating mb-3">
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  formControlName="email"
+                  placeholder="Email"
+                >
+                <label for="email">Email</label>
+                <div *ngIf="isFieldInvalid('email')" class="text-danger small mt-1">
+                  <div *ngIf="registrationForm.get('email')?.errors?.['required']">L'email è obbligatoria.</div>
+                  <div *ngIf="registrationForm.get('email')?.errors?.['email']">Inserisci un indirizzo email
+                    valido.
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-floating mb-3">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  formControlName="password"
+                  placeholder="Password"
+                >
+                <label for="password">Password</label>
+                <div *ngIf="isFieldInvalid('password')" class="text-danger small mt-1">
+                  <div *ngIf="registrationForm.get('password')?.errors?.['required']">La password è obbligatoria.
+                  </div>
+                  <div *ngIf="registrationForm.get('password')?.errors?.['minlength']">La password deve avere almeno 8
+                    caratteri.
+                  </div>
+                  <div *ngIf="registrationForm.get('password')?.errors?.['maxlength']">La password non deve superare
+                    15 caratteri.
+                  </div>
+                  <div *ngIf="registrationForm.get('password')?.errors?.['requireUpper']">La password deve contenere
+                    almeno una lettera maiuscola.
+                  </div>
+                  <div *ngIf="registrationForm.get('password')?.errors?.['requireLower']">La password deve contenere
+                    almeno una lettera minuscola.
+                  </div>
+                  <div *ngIf="registrationForm.get('password')?.errors?.['requireNumber']">La password deve contenere
+                    almeno un numero.
+                  </div>
+                  <div *ngIf="registrationForm.get('password')?.errors?.['requireSpecial']">La password deve contenere
+                    almeno un simbolo tra &#64;#$%^&+=!*()-_
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary btn-lg" (click)="prevStep()"
+                        [disabled]="isLoading">Indietro
+                </button>
+                <button type="submit" class="btn btn-primary btn-lg" [disabled]="registrationForm.invalid || isLoading">
+                  <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
+                        aria-hidden="true"></span>
+                  {{ isLoading ? 'Registrazione in corso...' : 'Registrati' }}
+                </button>
+              </div>
+            </div>
+          </form>
+
+          <div *ngIf="errorMessage" class="alert alert-danger mt-3 text-center" role="alert">
+            {{ errorMessage }}
+          </div>
+          <div *ngIf="successMessage" class="alert alert-success mt-3 text-center" role="alert">
+            {{ successMessage }}
+          </div>
+
+          <hr class="my-4">
+          <div class="text-center mt-3">
+            <span class="text-muted">Hai già un account?</span>
+            <a routerLink="/login" class="text-decoration-none fw-bold small ms-1">Accedi ora</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

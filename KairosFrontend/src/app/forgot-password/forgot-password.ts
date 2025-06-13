@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {Router, RouterLink} from '@angular/router';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {NgIf} from '@angular/common';
@@ -14,10 +14,12 @@ import {AuthenticationService} from '../services';
   templateUrl: './forgot-password.html',
   styleUrl: './forgot-password.css'
 })
-export class ForgotPassword implements OnInit {
+export class ForgotPassword implements OnInit, OnDestroy {
   forgotPasswordForm!: FormGroup;
   successMessage: string | null = null;
   errorMessage: string | null = null;
+  redirectTimeout: any | null = null;
+  isLoading: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -41,19 +43,23 @@ export class ForgotPassword implements OnInit {
       return;
     }
 
+    this.isLoading = true;
+
     const passwordResetRequest = {usernameOrEmail: this.forgotPasswordForm.get('usernameOrEmail')?.value};
 
     console.log('Forgot password request for ', passwordResetRequest);
 
     this.authService.forgotPassword(passwordResetRequest).subscribe({
         next: () => {
+          this.isLoading = false;
           console.log('Password reset request successful');
           this.successMessage = 'Le istruzioni per il recupero password sono state inviate all\'indirizzo email fornito.';
-          setTimeout(() => {
+          this.redirectTimeout = setTimeout(() => {
             this.router.navigate(['/login']).then(() => console.log('Login redirect successful'));
           }, 4000);
         }, error: (error) => {
-          console.error('Error during login:', error);
+          this.isLoading = false;
+          console.error('Error during forgot-password:', error);
           if (error.status === 400) {
             this.errorMessage = 'Errore nell\'invio. Riprova.';
           } else {
@@ -62,5 +68,12 @@ export class ForgotPassword implements OnInit {
         }
       }
     )
+  }
+
+  ngOnDestroy(): void {
+    if (this.redirectTimeout) {
+      console.log('Forgot password redirect timeout cleared.');
+      clearTimeout(this.redirectTimeout);
+    }
   }
 }
