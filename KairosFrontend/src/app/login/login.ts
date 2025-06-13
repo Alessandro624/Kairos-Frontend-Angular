@@ -56,7 +56,7 @@ export class Login implements OnInit {
         },
         error: (error) => {
           console.error('Error during login:', error);
-          if (error.status === 401 || error.status === 403) {
+          if (error.status === 400 || error.status === 401) {
             this.errorMessage = 'Credenziali non valide. Riprova.';
           } else {
             this.errorMessage = 'Si è verificato un errore durante l\'accesso. Riprova più tardi.';
