@@ -43,20 +43,16 @@ export class Login implements OnInit {
       this.authService.login(authRequest).subscribe({
         next: (response) => {
           const authToken = response.token;
-          localStorage.setItem('auth_token', authToken || '');
-          localStorage.setItem('refresh_token', response.refreshToken || '');
-          
-          if (authToken) {
-            const decodedAuthToken = this.authService.decodeJwt(authToken);
-            if (decodedAuthToken && decodedAuthToken.exp) {
-              const authExpiresAt = new Date(decodedAuthToken.exp * 1000);
-              localStorage.setItem('auth_token_expiry', authExpiresAt.toISOString());
-            } else {
-              console.warn('Invalid claim "exp"');
-            }
-          }
+          const refreshToken = response.refreshToken;
 
-          this.router.navigate(['/home']).then(() => console.log('Login successful'));
+          if (authToken && refreshToken) {
+            this.authService.setTokens(authToken, refreshToken);
+            this.router.navigate(['/home']).then(() => console.log('Login successful'));
+          } else {
+            this.errorMessage = 'Autenticazione non avvenuta. Riprova';
+            console.error("Authentication tokens not found in response.");
+            this.router.navigate(['/login']).then(() => console.log('Retry login'));
+          }
         },
         error: (error) => {
           console.error('Error during login:', error);
@@ -71,10 +67,10 @@ export class Login implements OnInit {
   }
 
   loginWithGoogle() {
-
+    this.authService.loginWithGoogle();
   }
 
   loginWithKeycloak() {
-
+    this.authService.loginWithKeycloak();
   }
 }

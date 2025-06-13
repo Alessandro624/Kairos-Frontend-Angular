@@ -339,6 +339,14 @@ export class AuthenticationService {
     );
   }
 
+  public loginWithGoogle(): void {
+    window.location.href = `${this.basePath}/v1/auth/oauth2/authorize/google?redirect_uri=http://localhost:4200/auth/callback`;
+  }
+
+  public loginWithKeycloak(): void {
+    window.location.href = `${this.basePath}/v1/auth/oauth2/authorize/keycloak?redirect_uri=http://localhost:4200/auth/callback`;
+  }
+
   decodeJwt(token: string): any | null {
     try {
       const base64Url = token.split('.')[1];
@@ -351,6 +359,18 @@ export class AuthenticationService {
     } catch (e) {
       console.error('Error during decoding of the JWT token:', e);
       return null;
+    }
+  }
+
+  setTokens(token: string, refreshToken: string): void {
+    localStorage.setItem('token', token);
+    localStorage.setItem('refreshToken', refreshToken);
+    const decodedAuthToken = this.decodeJwt(token);
+    if (decodedAuthToken && decodedAuthToken.exp) {
+      const authExpiresAt = new Date(decodedAuthToken.exp * 1000);
+      localStorage.setItem('auth_token_expiry', authExpiresAt.toISOString());
+    } else {
+      console.warn('Invalid claim "exp"');
     }
   }
 }

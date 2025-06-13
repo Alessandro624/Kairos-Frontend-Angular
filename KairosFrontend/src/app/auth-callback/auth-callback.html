@@ -1,0 +1,23 @@
+<div class="container d-flex justify-content-center align-items-center vh-100 bg-light p-3">
+  <div class="card shadow-lg p-4 p-md-5 text-center" style="max-width: 450px; width: 100%;">
+    @if (!error) {
+      <div class="loading-state">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Caricamento...</span>
+        </div>
+        <h1 class="mt-4 mb-3 fs-3 text-dark">Autenticazione in corso...</h1>
+        <p class="lead text-secondary">Attendere prego, ti stiamo reindirizzando.</p>
+      </div>
+    } @else {
+      <div class="error-state">
+        <div class="text-danger mb-3">
+          <i class="fas fa-exclamation-triangle fa-3x"></i>
+        </div>
+        <h2 class="mb-3 text-danger fs-2 fw-bold">Si è verificato un errore!</h2>
+        <p class="mb-4 text-muted">Non siamo riusciti a completare l'autenticazione.</p>
+        <p class="text-danger bg-light p-3 rounded border border-danger mb-4 small text-break">{{ error }}</p>
+        <button (click)="router.navigate(['/login'])" class="btn btn-primary btn-lg">Torna al Login</button>
+      </div>
+    }
+  </div>
+</div>

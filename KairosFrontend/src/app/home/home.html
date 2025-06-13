@@ -1,0 +1,54 @@
+<div class="bg-primary text-white text-center py-5 shadow-sm">
+  <div class="container">
+    <h1 class="display-4">Benvenuto su Kairos</h1>
+    <p class="lead">Trova e gestisci i tuoi eventi preferiti in un solo posto.</p>
+    <button class="btn btn-light btn-lg mt-3">Esplora Eventi</button>
+  </div>
+</div>
+
+<div class="container my-5">
+
+  @for (category of categories; track category) {
+    <section class="mb-5">
+      <h2 class="mb-4">{{ category }}</h2>
+      <div class="row flex-nowrap overflow-auto g-4 pb-3">
+        @for (event of featuredEvents; track event.id) {
+          @if (event.category === category) {
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="card h-100 shadow-sm position-relative">
+                <div class="d-flex align-items-center justify-content-center bg-light"
+                     style="height: 180px; overflow: hidden;">
+                  <img
+                    [src]="event.images && event.images.length > 0 ? event.images[0] : 'https://picsum.photos/seed/picsum/200/300'"
+                    class="card-img-top" style="height: 200px; width: 100%;"
+                    [alt]="event.title"
+                    (error)="event.images[0] = 'https://picsum.photos/seed/picsum/200/300'">
+                </div>
+
+                <span class="badge bg-success position-absolute top-0 end-0 m-2 fs-5">
+                  {{ event.sectors && event.sectors.length > 0 ? (event.sectors[0].price | currency:'EUR':'symbol':'1.0-2') : 'N/A' }}
+                </span>
+
+                <div class="card-body">
+                  <h5 class="card-title">{{ event.title }}</h5>
+                  <p class="card-text text-muted small">
+                    <i class="far fa-calendar-alt me-2"></i>{{ event.dateTime | date:'dd MMMM yyyy, HH:mm' }}
+                  </p>
+                  <p class="card-text text-muted small">
+                    <i class="fas fa-users me-2"></i>Max Partecipanti: {{ event.maxParticipants }}
+                  </p>
+                  <p class="card-text">{{ event.description.substring(0, 100) }}...</p>
+                  <a href="#" class="btn btn-primary btn-sm mt-2">Dettagli</a>
+                </div>
+              </div>
+            </div>
+          }
+        } @empty {
+          <div class="col-12 text-center text-muted">Nessun evento disponibile in questa categoria.</div>
+        }
+      </div>
+    </section>
+  } @empty {
+    <div class="col-12 text-center text-muted">Nessuna categoria di eventi disponibile al momento.</div>
+  }
+</div>
