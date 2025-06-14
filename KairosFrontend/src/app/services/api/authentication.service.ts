@@ -383,6 +383,13 @@ export class AuthenticationService {
     }
   }
 
+  extractRoles(token: string) {
+    const decoded = this.decodeJwt(token);
+    if (decoded && decoded.roles) {
+      return decoded.roles;
+    }
+  }
+
   isTokenExpired(expiryDateString: string): boolean {
     try {
       const expiryDate = new Date(expiryDateString);
@@ -539,5 +546,9 @@ export class AuthenticationService {
       console.error('Error during decoding for refresh token:', e);
       this.logout();
     }
+  }
+
+  getAccessToken(): string {
+    return localStorage.getItem('token')?.toString() || '';
   }
 }
