@@ -19,6 +19,7 @@
               id="usernameOrEmail"
               formControlName="usernameOrEmail"
               placeholder="Username o Email"
+              [class.is-invalid]="loginForm.get('usernameOrEmail')?.invalid && loginForm.get('usernameOrEmail')?.touched"
             >
               <label for="usernameOrEmail">Username o Email</label>
               <div *ngIf="loginForm.get('usernameOrEmail')?.invalid && loginForm.get('usernameOrEmail')?.touched"
@@ -26,20 +27,23 @@
                 Username o Email obbligatorio.
               </div>
             </div>
-            <div class="form-floating mb-3"><input
-              type="password"
-              class="form-control form-control-lg"
-              id="password"
-              formControlName="password"
-              placeholder="Password"
-            >
-              <label for="password">Password</label>
-              <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-                   class="text-danger small mt-1">
-                Password obbligatoria.
-              </div>
+
+            <div class="form-floating">
+              <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password"
+                     class="form-control" placeholder="Password"
+                     [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+              <label for="newPassword">Password</label>
+              <button type="button" class="btn btn-link password-toggle-btn"
+                      (click)="showPassword = !showPassword">
+                <i class="fas" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+              </button>
             </div>
-            <div class="d-grid mb-3">
+            <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                 class="text-danger small mt-1">
+              Password obbligatoria.
+            </div>
+
+            <div class="d-grid mt-3 mb-3">
               <button type="submit" class="btn btn-primary btn-lg" [disabled]="loginForm.invalid || isLoading">
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"
                       aria-hidden="true"></span>

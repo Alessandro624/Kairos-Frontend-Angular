@@ -413,6 +413,8 @@ export class AuthenticationService {
       return;
     }
 
+    this.configuration.accessToken = accessToken;
+
     localStorage.setItem(this.authTokenExpiryKey, authExpiresAt.toISOString());
     this.isAuthenticatedSubject.next(this.isTokenCurrentlyValid());
     this.userRoleSubject.next(this.getStoredUserRole());

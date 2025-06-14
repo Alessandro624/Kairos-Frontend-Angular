@@ -1,1 +1,159 @@
-<p>profile works!</p>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white text-center py-4 position-relative">
+          <h3 class="mb-0">Il mio profilo</h3>
+          <div class="position-absolute top-0 start-0 m-3">
+            <a (click)="goBack()"
+               class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center"
+               style="min-width: 45px; min-height: 45px;">
+              <i class="fas fa-arrow-left text-white fs-5"></i>
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          <div *ngIf="isLoading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Caricamento...</span>
+            </div>
+            <p class="mt-2">Caricamento dati utente...</p>
+          </div>
+
+          <div *ngIf="!isLoading">
+            <div class="mb-4 text-center">
+              <h4 class="mb-3">Informazioni Utente</h4>
+              <div class="rounded-circle d-flex align-items-center justify-content-center mb-3">
+                <img *ngIf="currentUser?.profileImage" [src]="currentUser?.profileImage?.photoUrl"
+                     alt="Immagine del profilo" class="img-thumbnail">
+                <i *ngIf="!currentUser?.profileImage" class="fas fa-user-circle fa-5x text-secondary"></i>
+              </div>
+              <p><strong>Username:</strong> {{ currentUser?.username }}</p>
+              <p><strong>Email:</strong> {{ currentUser?.email }}</p>
+            </div>
+
+            <hr>
+
+            <h4 class="mb-3">Aggiorna Dati Personali</h4>
+            <form [formGroup]="userForm" (ngSubmit)="onUpdateProfile()">
+              <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+                {{ errorMessage }}
+              </div>
+              <div *ngIf="updateSuccess" class="alert alert-success" role="alert">
+                Profilo aggiornato con successo!
+              </div>
+
+              <div class="form-floating mb-3">
+                <input type="text" id="firstName" formControlName="firstName" class="form-control" placeholder="Nome"
+                       [class.is-invalid]="isFieldInvalid(userForm, 'firstName')">
+                <label for="firstName">Nome</label>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid(userForm, 'firstName')">
+                  <span *ngIf="userForm.get('firstName')?.errors?.['required']">Il nome non può essere vuoto.<br></span>
+                  <span *ngIf="userForm.get('firstName')?.errors?.['minlength']">Il nome deve contenere almeno 2 caratteri.<br></span>
+                  <span *ngIf="userForm.get('firstName')?.errors?.['maxlength']">Il nome non può superare i 50 caratteri.</span>
+                </div>
+              </div>
+
+              <div class="form-floating mb-3">
+                <input type="text" id="lastName" formControlName="lastName" class="form-control" placeholder="Cognome"
+                       [class.is-invalid]="isFieldInvalid(userForm, 'lastName')">
+                <label for="lastName">Cognome</label>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid(userForm, 'lastName')">
+                  <span
+                    *ngIf="userForm.get('lastName')?.errors?.['required']">Il cognome non può essere vuoto.<br></span>
+                  <span *ngIf="userForm.get('lastName')?.errors?.['minlength']">Il cognome deve contenere almeno 2 caratteri.<br></span>
+                  <span *ngIf="userForm.get('lastName')?.errors?.['maxlength']">Il cognome non può superare i 50 caratteri.</span>
+                </div>
+              </div>
+
+              <div class="form-floating mb-3">
+                <input type="text" id="phoneNumber" formControlName="phoneNumber" class="form-control"
+                       placeholder="Numero di Telefono"
+                       [class.is-invalid]="isFieldInvalid(userForm, 'phoneNumber')">
+                <label for="phoneNumber">Numero di Telefono</label>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid(userForm, 'phoneNumber')">
+                  <span *ngIf="userForm.get('phoneNumber')?.errors?.['minlength']">Il numero di telefono deve contenere almeno 10 cifre.<br></span>
+                  <span *ngIf="userForm.get('phoneNumber')?.errors?.['maxlength']">Il numero di telefono non può superare i 15 caratteri.<br></span>
+                  <span *ngIf="userForm.get('phoneNumber')?.errors?.['pattern']">Formato numero di telefono non valido (può iniziare con '+' e contenere solo numeri).</span>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-success" [disabled]="userForm.invalid || userForm.pristine">
+                Salva Modifiche
+              </button>
+            </form>
+
+            <hr class="mt-4 mb-4">
+
+            @if (currentUser?.provider === 'LOCAL') {
+              <h4 class="mb-3">Cambia Password</h4>
+              <div *ngIf="passwordErrorMessage" class="alert alert-danger" role="alert">
+                {{ passwordErrorMessage }}
+              </div>
+              <div *ngIf="passwordChangeSuccess" class="alert alert-success" role="alert">
+                Password cambiata con successo!
+              </div>
+
+              <form [formGroup]="passwordForm" (ngSubmit)="onChangePassword()">
+                <div class="form-floating">
+                  <input [type]="showOldPassword ? 'text' : 'password'" id="oldPassword" formControlName="oldPassword"
+                         class="form-control" placeholder="Vecchia Password"
+                         [class.is-invalid]="isFieldInvalid(passwordForm, 'oldPassword')">
+                  <label for="oldPassword">Vecchia Password</label>
+                  <button type="button" class="btn btn-link password-toggle-btn"
+                          (click)="togglePasswordVisibility('old')">
+                    <i class="fas" [class.fa-eye]="!showOldPassword" [class.fa-eye-slash]="showOldPassword"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid(passwordForm, 'oldPassword')">
+                  <span *ngIf="passwordFormControl['oldPassword'].errors?.['required']">La vecchia password non può essere vuota.</span>
+                </div>
+
+                <div class="form-floating mt-3">
+                  <input [type]="showNewPassword ? 'text' : 'password'" id="newPassword" formControlName="newPassword"
+                         class="form-control" placeholder="Nuova Password"
+                         [class.is-invalid]="isFieldInvalid(passwordForm, 'newPassword')">
+                  <label for="newPassword">Nuova Password</label>
+                  <button type="button" class="btn btn-link password-toggle-btn"
+                          (click)="togglePasswordVisibility('new')">
+                    <i class="fas" [class.fa-eye]="!showNewPassword" [class.fa-eye-slash]="showNewPassword"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid(passwordForm, 'newPassword')">
+                  <span *ngIf="passwordFormControl['newPassword'].errors?.['required']">La nuova password non può essere vuota.<br></span>
+                  <span *ngIf="passwordFormControl['newPassword'].errors?.['minlength']">La password deve contenere almeno 8 caratteri.<br></span>
+                  <span *ngIf="passwordFormControl['newPassword'].errors?.['maxlength']">La password non può superare i 15 caratteri.<br></span>
+                  <span *ngIf="passwordFormControl['newPassword'].errors?.['requireUpper']">Deve contenere almeno una lettera maiuscola.<br></span>
+                  <span *ngIf="passwordFormControl['newPassword'].errors?.['requireLower']">Deve contenere almeno una lettera minuscola.<br></span>
+                  <span *ngIf="passwordFormControl['newPassword'].errors?.['requireNumber']">Deve contenere almeno un numero.<br></span>
+                  <span *ngIf="passwordFormControl['newPassword'].errors?.['requireSpecial']">Deve contenere almeno un carattere speciale (&#64;#$%^&+=!*()-_).</span>
+                </div>
+
+                <div class="form-floating mt-3">
+                  <input [type]="showConfirmNewPassword ? 'text' : 'password'" id="confirmNewPassword"
+                         formControlName="confirmNewPassword" class="form-control" placeholder="Conferma Nuova Password"
+                         [class.is-invalid]="isFieldInvalid(passwordForm, 'confirmNewPassword') || (passwordForm.errors?.['mismatch'] && passwordFormControl['confirmNewPassword'].touched)">
+                  <label for="confirmNewPassword">Conferma Nuova Password</label>
+                  <button type="button" class="btn btn-link password-toggle-btn"
+                          (click)="togglePasswordVisibility('confirmNew')">
+                    <i class="fas" [class.fa-eye]="!showConfirmNewPassword"
+                       [class.fa-eye-slash]="showConfirmNewPassword"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid(passwordForm, 'confirmNewPassword')">
+                  <span *ngIf="passwordFormControl['confirmNewPassword'].errors?.['required']">La conferma della password è obbligatoria.<br></span>
+                  <span *ngIf="passwordForm.errors?.['mismatch'] && passwordFormControl['confirmNewPassword'].touched">
+                  Le password non coincidono.</span>
+                </div>
+                
+                <button type="submit" class="btn btn-warning mt-3" [disabled]="passwordForm.invalid">
+                  Cambia Password
+                </button>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

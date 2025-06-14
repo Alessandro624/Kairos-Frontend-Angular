@@ -19,6 +19,7 @@ export class Login implements OnInit {
   loginForm!: FormGroup;
   errorMessage: string | null = null;
   isLoading: boolean = false;
+  showPassword: boolean = false;
 
   constructor(
     private formBuilder: FormBuilder,

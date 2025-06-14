@@ -22,6 +22,7 @@
                   id="firstName"
                   formControlName="firstName"
                   placeholder="Nome"
+                  [class.is-invalid]="isFieldInvalid('firstName')"
                 >
                 <label for="firstName">Nome</label>
                 <div *ngIf="registrationForm.get('firstName')?.invalid && registrationForm.get('firstName')?.touched"
@@ -41,6 +42,7 @@
                   id="lastName"
                   formControlName="lastName"
                   placeholder="Cognome"
+                  [class.is-invalid]="isFieldInvalid('lastName')"
                 >
                 <label for="lastName">Cognome</label>
                 <div *ngIf="registrationForm.get('lastName')?.invalid && registrationForm.get('lastName')?.touched"
@@ -74,6 +76,7 @@
                   id="username"
                   formControlName="username"
                   placeholder="Username"
+                  [class.is-invalid]="isFieldInvalid('username')"
                 >
                 <label for="username">Username</label>
                 <div *ngIf="isFieldInvalid('username')" class="text-danger small mt-1">
@@ -96,6 +99,7 @@
                   id="email"
                   formControlName="email"
                   placeholder="Email"
+                  [class.is-invalid]="isFieldInvalid('email')"
                 >
                 <label for="email">Email</label>
                 <div *ngIf="isFieldInvalid('email')" class="text-danger small mt-1">
@@ -106,40 +110,39 @@
                 </div>
               </div>
 
-              <div class="form-floating mb-3">
-                <input
-                  type="password"
-                  class="form-control"
-                  id="password"
-                  formControlName="password"
-                  placeholder="Password"
-                >
-                <label for="password">Password</label>
-                <div *ngIf="isFieldInvalid('password')" class="text-danger small mt-1">
-                  <div *ngIf="registrationForm.get('password')?.errors?.['required']">La password è obbligatoria.
-                  </div>
-                  <div *ngIf="registrationForm.get('password')?.errors?.['minlength']">La password deve avere almeno 8
-                    caratteri.
-                  </div>
-                  <div *ngIf="registrationForm.get('password')?.errors?.['maxlength']">La password non deve superare
-                    15 caratteri.
-                  </div>
-                  <div *ngIf="registrationForm.get('password')?.errors?.['requireUpper']">La password deve contenere
-                    almeno una lettera maiuscola.
-                  </div>
-                  <div *ngIf="registrationForm.get('password')?.errors?.['requireLower']">La password deve contenere
-                    almeno una lettera minuscola.
-                  </div>
-                  <div *ngIf="registrationForm.get('password')?.errors?.['requireNumber']">La password deve contenere
-                    almeno un numero.
-                  </div>
-                  <div *ngIf="registrationForm.get('password')?.errors?.['requireSpecial']">La password deve contenere
-                    almeno un simbolo tra &#64;#$%^&+=!*()-_
-                  </div>
+              <div class="form-floating">
+                <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password"
+                       class="form-control" placeholder="Password" [class.is-invalid]="isFieldInvalid('password')">
+                <label for="newPassword">Password</label>
+                <button type="button" class="btn btn-link password-toggle-btn"
+                        (click)="showPassword = !showPassword">
+                  <i class="fas" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+                </button>
+              </div>
+              <div *ngIf="isFieldInvalid('password')" class="text-danger small mt-1">
+                <div *ngIf="registrationForm.get('password')?.errors?.['required']">La password è obbligatoria.
+                </div>
+                <div *ngIf="registrationForm.get('password')?.errors?.['minlength']">La password deve avere almeno 8
+                  caratteri.
+                </div>
+                <div *ngIf="registrationForm.get('password')?.errors?.['maxlength']">La password non deve superare
+                  15 caratteri.
+                </div>
+                <div *ngIf="registrationForm.get('password')?.errors?.['requireUpper']">La password deve contenere
+                  almeno una lettera maiuscola.
+                </div>
+                <div *ngIf="registrationForm.get('password')?.errors?.['requireLower']">La password deve contenere
+                  almeno una lettera minuscola.
+                </div>
+                <div *ngIf="registrationForm.get('password')?.errors?.['requireNumber']">La password deve contenere
+                  almeno un numero.
+                </div>
+                <div *ngIf="registrationForm.get('password')?.errors?.['requireSpecial']">La password deve contenere
+                  almeno un simbolo tra &#64;#$%^&+=!*()-_
                 </div>
               </div>
 
-              <div class="d-flex justify-content-between">
+              <div class="d-flex justify-content-between mt-3">
                 <button type="button" class="btn btn-outline-secondary btn-lg" (click)="prevStep()"
                         [disabled]="isLoading">Indietro
                 </button>

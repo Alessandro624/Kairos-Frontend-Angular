@@ -21,6 +21,7 @@ export class Register implements OnInit, OnDestroy {
   successMessage: string | null = null;
   private redirectTimeout: any | null = null;
   isLoading: boolean = false;
+  showPassword: boolean = false;
 
   constructor(private formBuilder: FormBuilder,
               private router: Router,
@@ -139,7 +140,7 @@ export class Register implements OnInit, OnDestroy {
       const hasUpper = /[A-Z]/.test(value);
       const hasLower = /[a-z]/.test(value);
       const hasNumber = /[0-9]/.test(value);
-      const hasSpecial = /[@#$%^&+=!*()-_]/.test(value);
+      const hasSpecial = /[@#$%^&+=!*()\-_]/.test(value);
 
       if (!hasUpper) errors['requireUpper'] = true;
       if (!hasLower) errors['requireLower'] = true;

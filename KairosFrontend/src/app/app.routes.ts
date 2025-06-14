@@ -8,6 +8,7 @@ import {Profile} from './profile/profile';
 import {NotFound} from './not-found/not-found';
 import {Unauthorized} from './unauthorized/unauthorized';
 import {authGuard} from './auth-guard';
+import {Forbidden} from './forbidden/forbidden';
 
 export const routes: Routes = [
   {path: '', redirectTo: '/home', pathMatch: 'full'},
@@ -16,8 +17,9 @@ export const routes: Routes = [
   {path: 'auth/callback', component: AuthCallback},
   {path: 'forgot-password', component: ForgotPassword},
   {path: 'register', component: Register},
-  {path: 'profile', component: Profile, canActivate: [authGuard], data: {roles: ['ROLE_USER']}},
-  {path: '403', component: Unauthorized},
-  {path: '401', component: NotFound},
-  {path: '**', redirectTo: '/401'}
+  {path: 'profile', component: Profile, canActivate: [authGuard]},
+  {path: '401', component: Unauthorized},
+  {path: '403', component: Forbidden},
+  {path: '404', component: NotFound},
+  {path: '**', redirectTo: '/404'}
 ];
