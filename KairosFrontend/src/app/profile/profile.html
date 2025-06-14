@@ -83,9 +83,9 @@
               </button>
             </form>
 
-            <hr class="mt-4 mb-4">
-
             @if (currentUser?.provider === 'LOCAL') {
+              <hr class="mt-4 mb-4">
+              
               <h4 class="mb-3">Cambia Password</h4>
               <div *ngIf="passwordErrorMessage" class="alert alert-danger" role="alert">
                 {{ passwordErrorMessage }}
@@ -145,7 +145,7 @@
                   <span *ngIf="passwordForm.errors?.['mismatch'] && passwordFormControl['confirmNewPassword'].touched">
                   Le password non coincidono.</span>
                 </div>
-                
+
                 <button type="submit" class="btn btn-warning mt-3" [disabled]="passwordForm.invalid">
                   Cambia Password
                 </button>

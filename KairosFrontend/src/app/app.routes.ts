@@ -9,6 +9,7 @@ import {NotFound} from './not-found/not-found';
 import {Unauthorized} from './unauthorized/unauthorized';
 import {authGuard} from './auth-guard';
 import {Forbidden} from './forbidden/forbidden';
+import {Admin} from './admin/admin';
 
 export const routes: Routes = [
   {path: '', redirectTo: '/home', pathMatch: 'full'},
@@ -18,6 +19,7 @@ export const routes: Routes = [
   {path: 'forgot-password', component: ForgotPassword},
   {path: 'register', component: Register},
   {path: 'profile', component: Profile, canActivate: [authGuard]},
+  {path: 'admin', component: Admin, canActivate: [authGuard], data: {roles: ['ROLE_ADMIN']}},
   {path: '401', component: Unauthorized},
   {path: '403', component: Forbidden},
   {path: '404', component: NotFound},

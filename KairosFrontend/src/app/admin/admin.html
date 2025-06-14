@@ -1,0 +1,139 @@
+<div class="container mt-5">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white text-center py-3">
+      <h3 class="mb-0">Gestione Utenti</h3>
+    </div>
+    <div class="card-body">
+
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+      <div *ngIf="successMessage" class="alert alert-success" role="alert">
+        {{ successMessage }}
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-column flex-md-row">
+        <h4 class="mb-3 mb-md-0 text-nowrap w-auto w-md-25">Lista Utenti</h4>
+        <div
+          class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-end gap-2 gap-md-3 w-100 w-md-auto">
+          <div class="d-flex align-items-center">
+            <label for="pageSizeSelect" class="form-label mb-0 me-2 text-nowrap">Utenti per pagina:</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" [(ngModel)]="pageSize"
+                    (change)="onSizeChange($event)">
+              <option *ngFor="let size of pageSizes" [value]="size">{{ size }}</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center">
+            <label for="sortBySelect" class="form-label mb-0 me-2 text-nowrap">Ordina per:</label>
+            <select id="sortBySelect" class="form-select form-select-sm" [(ngModel)]="sortBy"
+                    (change)="onSortChange($event)">
+              <option *ngFor="let field of sortFields" [value]="field.value">{{ field.name }}</option>
+            </select>
+          </div>
+
+          <div class="d-flex align-items-center">
+            <label for="sortDirectionSelect" class="form-label mb-0 me-2 text-nowrap">Direzione:</label>
+            <select id="sortDirectionSelect" class="form-select form-select-sm" [(ngModel)]="sortDirection"
+                    (change)="onDirectionChange($event)">
+              <option value="ASC">ASC</option>
+              <option value="DESC">DESC</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Caricamento...</span>
+        </div>
+        <p class="mt-2">Caricamento utenti...</p>
+      </div>
+
+      <div *ngIf="!isLoading && (usersPage$ | async) as usersPage">
+        <div *ngIf="usersPage.content && usersPage.content.length > 0; else noUsers">
+          <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle">
+              <thead>
+              <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Nome</th>
+                <th>Cognome</th>
+                <th>Ruoli Attuali</th>
+                <th class="text-center">Azioni</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr *ngFor="let user of usersPage.content; let i = index">
+                <td>{{ usersPage.pageable?.offset + i + 1 }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.firstName || 'N/A' }}</td>
+                <td>{{ user.lastName || 'N/A' }}</td>
+                <td>
+                  <span class="badge bg-info text-dark me-1">{{ user.role }}</span>
+                </td>
+                <td class="text-center">
+                  <div class="dropdown">
+                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
+                            id="dropdownMenuButton{{user.id}}" data-bs-toggle="dropdown" aria-expanded="false">
+                      Azioni
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a class="dropdown-item" href="#"
+                           (click)="$event.preventDefault(); toggleRole(user, 'ORGANIZER')"
+                           [class.disabled]="isCurrentUser(user.id) || isUserRole(user, 'ORGANIZER')">
+                          {{ 'Rendi Organizzatore' }}
+                        </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item" href="#"
+                           (click)="$event.preventDefault(); toggleRole(user, 'ADMIN')"
+                           [class.disabled]="isCurrentUser(user.id) || isUserRole(user, 'ADMIN')">
+                          {{ 'Rendi Admin' }}
+                        </a>
+                      </li>
+                      <li>
+                        <hr class="dropdown-divider">
+                      </li>
+                      <li>
+                        <a class="dropdown-item text-danger" href="#"
+                           (click)="$event.preventDefault(); confirmDelete(user)"
+                           [class.disabled]="isCurrentUser(user.id)"> Elimina Account
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <nav aria-label="Page navigation" class="d-flex justify-content-center mt-3">
+            <ul class="pagination">
+              <li class="page-item" [class.disabled]="usersPage.first">
+                <a class="page-link" href="#" (click)="$event.preventDefault(); onPageChange(usersPage.number - 1)">Precedente</a>
+              </li>
+              <li class="page-item" *ngFor="let pageNum of [].constructor(usersPage.totalPages); let i = index"
+                  [class.active]="i === usersPage.number">
+                <a class="page-link" href="#" (click)="$event.preventDefault(); onPageChange(i)">{{ i + 1 }}</a>
+              </li>
+              <li class="page-item" [class.disabled]="usersPage.last">
+                <a class="page-link" href="#" (click)="$event.preventDefault(); onPageChange(usersPage.number + 1)">Successiva</a>
+              </li>
+            </ul>
+            <span class="ms-3 my-auto text-muted">Totale Utenti: {{ usersPage.totalElements }}</span>
+          </nav>
+        </div>
+
+        <ng-template #noUsers>
+          <div class="alert alert-info text-center">Nessun utente trovato.</div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>
