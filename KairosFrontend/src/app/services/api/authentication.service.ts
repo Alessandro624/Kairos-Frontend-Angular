@@ -367,18 +367,38 @@ export class AuthenticationService {
     }
   }
 
+  extractExpirationDate(token: string): Date | null {
+    const decoded = this.decodeJwt(token);
+    if (decoded && decoded.exp) {
+      return new Date(decoded.exp * 1000);
+    } else {
+      return null;
+    }
+  }
+
+  isTokenExpired(expiryDateString: string): boolean {
+    try {
+      const expiryDate = new Date(expiryDateString);
+      const now = new Date();
+      return expiryDate > now;
+    } catch (e) {
+      console.error('Error parsing expiry date from localStorage:', e);
+      return false;
+    }
+  }
+
   setTokens(accessToken: string, refreshToken: string): void {
     localStorage.setItem(this.accessTokenKey, accessToken);
     localStorage.setItem(this.refreshTokenKey, refreshToken);
+    const authExpiresAt = this.extractExpirationDate(accessToken);
 
-    const decodedAuthToken = this.decodeJwt(accessToken);
-    if (decodedAuthToken && decodedAuthToken.exp) {
-      const authExpiresAt = new Date(decodedAuthToken.exp * 1000);
-      localStorage.setItem(this.authTokenExpiryKey, authExpiresAt.toISOString());
-    } else {
+    if (!authExpiresAt) {
       console.warn('Invalid claim "exp" in JWT token. Cannot set expiry date.');
-      localStorage.removeItem(this.authTokenExpiryKey);
+      this.logout();
+      return;
     }
+
+    localStorage.setItem(this.authTokenExpiryKey, authExpiresAt.toISOString());
     this.isAuthenticatedSubject.next(this.isTokenCurrentlyValid());
     this.scheduleTokenRefresh();
   }
@@ -406,14 +426,7 @@ export class AuthenticationService {
       return false;
     }
 
-    try {
-      const expiryDate = new Date(expiryDateString);
-      const now = new Date();
-      return expiryDate > now;
-    } catch (e) {
-      console.error('Error parsing expiry date from localStorage:', e);
-      return false;
-    }
+    return this.isTokenExpired(expiryDateString);
   }
 
   isAuthenticated(): Observable<boolean> {
@@ -422,10 +435,19 @@ export class AuthenticationService {
 
   public refreshAccessToken(): Observable<AuthResponse> {
     const refreshToken = localStorage.getItem(this.refreshTokenKey);
+
     if (!refreshToken) {
       console.warn('No refresh token available. Logging out.');
       this.logout();
       return throwError(() => new Error('No refresh token available.'));
+    }
+
+    const expiryRefreshTokenDate = this.extractExpirationDate(refreshToken);
+
+    if (!expiryRefreshTokenDate || this.isTokenExpired(expiryRefreshTokenDate.toISOString())) {
+      console.warn('Refresh token expired. Logging out.');
+      this.logout();
+      return throwError(() => new Error('Refresh token expired.'));
     }
 
     if (this.isRefreshingToken && this.refreshTokenPromise) {
