@@ -8,6 +8,9 @@
         </a>
         <div>
           @if (isLoggedIn) {
+            <a routerLink="/profile" class="navbar-brand">
+              <span class="ms-2">Profilo</span>
+            </a>
             <button class="btn btn-outline-danger" (click)="logout()">Logout</button>
           } @else {
             <button class="btn btn-outline-primary" routerLink="/login">Login</button>

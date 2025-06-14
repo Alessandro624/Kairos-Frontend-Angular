@@ -218,6 +218,13 @@ export class AuthenticationService {
 
     let headers = this.defaultHeaders;
 
+    if (this.configuration.accessToken) {
+      const accessToken = typeof this.configuration.accessToken === 'function'
+        ? this.configuration.accessToken()
+        : this.configuration.accessToken;
+      headers = headers.set('Authorization', 'Bearer ' + accessToken);
+    }
+
     // to determine the Accept header
     let httpHeaderAccepts: string[] = [
       'application/json',
@@ -380,7 +387,7 @@ export class AuthenticationService {
     try {
       const expiryDate = new Date(expiryDateString);
       const now = new Date();
-      return expiryDate > now;
+      return expiryDate <= now;
     } catch (e) {
       console.error('Error parsing expiry date from localStorage:', e);
       return false;
@@ -426,7 +433,7 @@ export class AuthenticationService {
       return false;
     }
 
-    return this.isTokenExpired(expiryDateString);
+    return !this.isTokenExpired(expiryDateString);
   }
 
   isAuthenticated(): Observable<boolean> {
@@ -456,7 +463,7 @@ export class AuthenticationService {
 
     this.isRefreshingToken = true;
     this.refreshTokenPromise = new Promise<AuthResponse>((resolve, reject) => {
-      this.refresh({refreshToken: refreshToken}).pipe(
+      this.refresh(refreshToken).pipe(
         tap(response => {
           this.setTokens(response.token, response.refreshToken);
           this.isAuthenticatedSubject.next(true);
