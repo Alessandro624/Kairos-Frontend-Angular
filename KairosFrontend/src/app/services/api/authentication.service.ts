@@ -37,6 +37,7 @@ export class AuthenticationService {
   private authTokenExpiryKey: string = "auth_token_expiry";
   private refreshTokenKey: string = "refresh_token";
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.isTokenCurrentlyValid());
+  private userRoleSubject = new BehaviorSubject<any | null>(this.getStoredUserRole());
   private isRefreshingToken = false;
   private refreshTokenPromise: Promise<AuthResponse> | null = null;
   private refreshTimer: any;
@@ -397,7 +398,7 @@ export class AuthenticationService {
       return expiryDate <= now;
     } catch (e) {
       console.error('Error parsing expiry date from localStorage:', e);
-      return false;
+      return true;
     }
   }
 
@@ -414,6 +415,7 @@ export class AuthenticationService {
 
     localStorage.setItem(this.authTokenExpiryKey, authExpiresAt.toISOString());
     this.isAuthenticatedSubject.next(this.isTokenCurrentlyValid());
+    this.userRoleSubject.next(this.getStoredUserRole());
     this.scheduleTokenRefresh();
   }
 
@@ -422,6 +424,7 @@ export class AuthenticationService {
     localStorage.removeItem(this.refreshTokenKey);
     localStorage.removeItem(this.authTokenExpiryKey);
     this.isAuthenticatedSubject.next(false);
+    this.userRoleSubject.next(null);
 
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
@@ -445,6 +448,10 @@ export class AuthenticationService {
 
   isAuthenticated(): Observable<boolean> {
     return this.isAuthenticatedSubject.asObservable();
+  }
+
+  getUserRole(): Observable<any | null> {
+    return this.userRoleSubject.asObservable();
   }
 
   public refreshAccessToken(): Observable<AuthResponse> {
@@ -473,7 +480,6 @@ export class AuthenticationService {
       this.refresh(refreshToken).pipe(
         tap(response => {
           this.setTokens(response.token, response.refreshToken);
-          this.isAuthenticatedSubject.next(true);
           resolve(response);
         }),
         catchError(error => {
@@ -504,7 +510,7 @@ export class AuthenticationService {
 
     if (!token || !expiryDateString) {
       console.log('No access token or expiry date found to schedule refresh.');
-      this.isAuthenticatedSubject.next(false);
+      this.logout();
       return;
     }
 
@@ -548,7 +554,11 @@ export class AuthenticationService {
     }
   }
 
-  getAccessToken(): string {
-    return localStorage.getItem('token')?.toString() || '';
+  private getStoredUserRole() {
+    const token = localStorage.getItem(this.accessTokenKey)?.toString() || '';
+    if (!token) {
+      return null;
+    }
+    return this.extractRoles(token);
   }
 }

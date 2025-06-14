@@ -16,13 +16,11 @@ export const authGuard: CanActivateFn = async (route, _state) => {
     }
 
     const requiredRoles = route.data['roles'] as string[];
-    const userRoles = authService.extractRoles(authService.getAccessToken())[0].authority;
+    const userRole = await firstValueFrom(authService.getUserRole());
 
     if (requiredRoles && requiredRoles.length > 0) {
-      const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
-
-      if (!hasRequiredRole) {
-        console.log('AuthGuard: User does not have required roles. Redirecting to /403.');
+      if (!userRole || !requiredRoles.includes(userRole[0].authority)) {
+        console.log('AuthGuard: User authenticated but does not have required role. Redirecting to /403.');
         return router.createUrlTree(['/403']);
       }
     }
