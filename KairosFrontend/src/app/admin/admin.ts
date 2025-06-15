@@ -241,4 +241,8 @@ export class Admin implements OnInit, OnDestroy {
   isCurrentUser(username: string): boolean {
     return this.currentUsername === username;
   }
+
+  goBack() {
+    window.history.back();
+  }
 }
