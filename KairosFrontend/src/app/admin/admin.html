@@ -140,7 +140,7 @@
                 <a class="page-link rounded-start" href="#"
                    (click)="$event.preventDefault(); onPageChange(pageData.number - 1)">Precedente</a>
               </li>
-              <li class="page-item" *ngFor="let pageNum of [].constructor(pageData.totalPages); let i = index"
+              <li class="page-item" *ngFor="let ignoredPageNum of [].constructor(pageData.totalPages); let i = index"
                   [class.active]="i === pageData.number">
                 <a class="page-link" href="#" (click)="$event.preventDefault(); onPageChange(i)">{{ i + 1 }}</a>
               </li>

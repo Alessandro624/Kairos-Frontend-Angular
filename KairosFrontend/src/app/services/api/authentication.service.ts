@@ -58,7 +58,7 @@ export class AuthenticationService {
    * @param consumes string[] mime-types
    * @return true: consumes contains 'multipart/form-data', false: otherwise
    */
-  private canConsumeForm(consumes: string[]): boolean {
+  private ignoredCanConsumeForm(consumes: string[]): boolean {
     const form = 'multipart/form-data';
     for (const consume of consumes) {
       if (form === consume) {
@@ -190,7 +190,7 @@ export class AuthenticationService {
     }
 
     // to determine the Content-Type header
-    const consumes: string[] = [];
+    const ignoredConsumes: string[] = [];
 
     return this.httpClient.request<any>('get', `${this.basePath}/v1/auth/oauth2/login/failure`,
       {
