@@ -127,4 +127,18 @@ export class Home implements OnInit {
     ];
   }
 
+  scrollDown() {
+    const targetElement: HTMLElement | null = document.querySelector('.container.my-5');
+    if (targetElement) {
+      window.scrollTo({
+        top: targetElement.offsetTop - 125,
+        behavior: 'smooth'
+      });
+    } else {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }
 }
