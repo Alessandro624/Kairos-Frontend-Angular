@@ -38,6 +38,7 @@ export class AuthenticationService {
   private refreshTokenKey: string = "refresh_token";
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(this.isTokenCurrentlyValid());
   private userRoleSubject = new BehaviorSubject<any | null>(this.getStoredUserRole());
+  private usernameSubject = new BehaviorSubject<string | null>(this.getStoredUsername());
   private isRefreshingToken = false;
   private refreshTokenPromise: Promise<AuthResponse> | null = null;
   private refreshTimer: any;
@@ -391,6 +392,13 @@ export class AuthenticationService {
     }
   }
 
+  private extractUsername(token: string) {
+    const decoded = this.decodeJwt(token);
+    if (decoded && decoded.sub) {
+      return decoded.sub;
+    }
+  }
+
   isTokenExpired(expiryDateString: string): boolean {
     try {
       const expiryDate = new Date(expiryDateString);
@@ -418,6 +426,7 @@ export class AuthenticationService {
     localStorage.setItem(this.authTokenExpiryKey, authExpiresAt.toISOString());
     this.isAuthenticatedSubject.next(this.isTokenCurrentlyValid());
     this.userRoleSubject.next(this.getStoredUserRole());
+    this.usernameSubject.next(this.getStoredUsername());
     this.scheduleTokenRefresh();
   }
 
@@ -427,6 +436,7 @@ export class AuthenticationService {
     localStorage.removeItem(this.authTokenExpiryKey);
     this.isAuthenticatedSubject.next(false);
     this.userRoleSubject.next(null);
+    this.usernameSubject.next(null);
 
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
@@ -454,6 +464,10 @@ export class AuthenticationService {
 
   getUserRole(): Observable<any | null> {
     return this.userRoleSubject.asObservable();
+  }
+
+  getUsername(): Observable<string | null> {
+    return this.usernameSubject.asObservable();
   }
 
   public refreshAccessToken(): Observable<AuthResponse> {
@@ -562,5 +576,13 @@ export class AuthenticationService {
       return null;
     }
     return this.extractRoles(token);
+  }
+
+  private getStoredUsername() {
+    const token = localStorage.getItem(this.accessTokenKey)?.toString() || '';
+    if (!token) {
+      return null;
+    }
+    return this.extractUsername(token);
   }
 }

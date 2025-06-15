@@ -11,7 +11,6 @@ import {provideHttpClient, withFetch, withInterceptors} from '@angular/common/ht
 import {ApiModule, Configuration} from './services';
 import {API_BASE_PATH} from '../environments/environment';
 import {httpErrorInterceptor} from './http-error-interceptor';
-import {Profile} from './profile/profile';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -24,6 +23,6 @@ export const appConfig: ApplicationConfig = {
         basePath: API_BASE_PATH,
         accessToken: localStorage.getItem('token')?.toString() || '',
       }))
-    ), Profile
+    )
   ]
 };

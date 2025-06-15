@@ -1,14 +1,14 @@
 <div class="container mt-5">
   <div class="card shadow-sm border-0">
-    <div class="card-header bg-primary text-white text-center py-3">
+    <div class="card-header bg-primary text-white text-center py-3 rounded-top">
       <h3 class="mb-0">Gestione Utenti</h3>
     </div>
     <div class="card-body">
 
-      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+      <div *ngIf="errorMessage" class="alert alert-danger rounded" role="alert">
         {{ errorMessage }}
       </div>
-      <div *ngIf="successMessage" class="alert alert-success" role="alert">
+      <div *ngIf="successMessage" class="alert alert-success rounded" role="alert">
         {{ successMessage }}
       </div>
 
@@ -18,7 +18,7 @@
           class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-end gap-2 gap-md-3 w-100 w-md-auto">
           <div class="d-flex align-items-center">
             <label for="pageSizeSelect" class="form-label mb-0 me-2 text-nowrap">Utenti per pagina:</label>
-            <select id="pageSizeSelect" class="form-select form-select-sm" [(ngModel)]="pageSize"
+            <select id="pageSizeSelect" class="form-select form-select-sm rounded" [(ngModel)]="pageSize"
                     (change)="onSizeChange($event)">
               <option *ngFor="let size of pageSizes" [value]="size">{{ size }}</option>
             </select>
@@ -26,7 +26,7 @@
 
           <div class="d-flex align-items-center">
             <label for="sortBySelect" class="form-label mb-0 me-2 text-nowrap">Ordina per:</label>
-            <select id="sortBySelect" class="form-select form-select-sm" [(ngModel)]="sortBy"
+            <select id="sortBySelect" class="form-select form-select-sm rounded" [(ngModel)]="sortBy"
                     (change)="onSortChange($event)">
               <option *ngFor="let field of sortFields" [value]="field.value">{{ field.name }}</option>
             </select>
@@ -34,7 +34,7 @@
 
           <div class="d-flex align-items-center">
             <label for="sortDirectionSelect" class="form-label mb-0 me-2 text-nowrap">Direzione:</label>
-            <select id="sortDirectionSelect" class="form-select form-select-sm" [(ngModel)]="sortDirection"
+            <select id="sortDirectionSelect" class="form-select form-select-sm rounded" [(ngModel)]="sortDirection"
                     (change)="onDirectionChange($event)">
               <option value="ASC">ASC</option>
               <option value="DESC">DESC</option>
@@ -50,10 +50,10 @@
         <p class="mt-2">Caricamento utenti...</p>
       </div>
 
-      <div *ngIf="!isLoading && (usersPage$ | async) as usersPage">
-        <div *ngIf="usersPage.content && usersPage.content.length > 0; else noUsers">
+      <div *ngIf="!isLoading && (usersPage | async) as pageData">
+        <div *ngIf="pageData.content && pageData.content.length > 0; else noUsers">
           <div class="table-responsive">
-            <table class="table table-hover table-striped align-middle">
+            <table class="table table-hover table-striped align-middle rounded-table">
               <thead>
               <tr>
                 <th>#</th>
@@ -66,34 +66,47 @@
               </tr>
               </thead>
               <tbody>
-              <tr *ngFor="let user of usersPage.content; let i = index">
-                <td>{{ usersPage.pageable?.offset + i + 1 }}</td>
-                <td>{{ user.username }}</td>
+              <tr *ngFor="let user of pageData.content; let i = index">
+                <td>
+                  {{ (pageData.pageable?.offset || 0) + i + 1 }}
+                </td>
+                <td>
+                  {{ user.username }}
+                  <span *ngIf="isCurrentUser(user.username)" class="badge bg-secondary ms-1">Tu</span>
+                </td>
                 <td>{{ user.email }}</td>
                 <td>{{ user.firstName || 'N/A' }}</td>
                 <td>{{ user.lastName || 'N/A' }}</td>
                 <td>
-                  <span class="badge bg-info text-dark me-1">{{ user.role }}</span>
+                  <span class="badge"
+                        [ngClass]="{
+                          'bg-success': user.role === 'ADMIN',
+                          'bg-warning': user.role === 'ORGANIZER',
+                          'bg-info': user.role === 'USER'
+                        }">
+                    {{ user.role }}
+                  </span>
                 </td>
                 <td class="text-center">
                   <div class="dropdown">
-                    <button class="btn btn-sm btn-secondary dropdown-toggle" type="button"
-                            id="dropdownMenuButton{{user.id}}" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-sm btn-secondary dropdown-toggle rounded-pill" type="button"
+                            id="dropdownMenuButton{{user.username}}" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                       Azioni
                     </button>
-                    <ul class="dropdown-menu">
+                    <ul class="dropdown-menu dropdown-menu-end rounded shadow">
                       <li>
                         <a class="dropdown-item" href="#"
                            (click)="$event.preventDefault(); toggleRole(user, 'ORGANIZER')"
-                           [class.disabled]="isCurrentUser(user.id) || isUserRole(user, 'ORGANIZER')">
-                          {{ 'Rendi Organizzatore' }}
+                           [class.disabled]="isCurrentUser(user.username) || isUserRole(user, 'ORGANIZER')">
+                          Rendi Organizzatore
                         </a>
                       </li>
                       <li>
                         <a class="dropdown-item" href="#"
                            (click)="$event.preventDefault(); toggleRole(user, 'ADMIN')"
-                           [class.disabled]="isCurrentUser(user.id) || isUserRole(user, 'ADMIN')">
-                          {{ 'Rendi Admin' }}
+                           [class.disabled]="isCurrentUser(user.username) || isUserRole(user, 'ADMIN')">
+                          Rendi Admin
                         </a>
                       </li>
                       <li>
@@ -102,7 +115,8 @@
                       <li>
                         <a class="dropdown-item text-danger" href="#"
                            (click)="$event.preventDefault(); confirmDelete(user)"
-                           [class.disabled]="isCurrentUser(user.id)"> Elimina Account
+                           [class.disabled]="isCurrentUser(user.username)">
+                          Elimina Account
                         </a>
                       </li>
                     </ul>
@@ -114,25 +128,47 @@
           </div>
 
           <nav aria-label="Page navigation" class="d-flex justify-content-center mt-3">
-            <ul class="pagination">
-              <li class="page-item" [class.disabled]="usersPage.first">
-                <a class="page-link" href="#" (click)="$event.preventDefault(); onPageChange(usersPage.number - 1)">Precedente</a>
+            <ul class="pagination pagination-sm rounded">
+              <li class="page-item" [class.disabled]="pageData.first">
+                <a class="page-link rounded-start" href="#"
+                   (click)="$event.preventDefault(); onPageChange(pageData.number - 1)">Precedente</a>
               </li>
-              <li class="page-item" *ngFor="let pageNum of [].constructor(usersPage.totalPages); let i = index"
-                  [class.active]="i === usersPage.number">
+              <li class="page-item" *ngFor="let pageNum of [].constructor(pageData.totalPages); let i = index"
+                  [class.active]="i === pageData.number">
                 <a class="page-link" href="#" (click)="$event.preventDefault(); onPageChange(i)">{{ i + 1 }}</a>
               </li>
-              <li class="page-item" [class.disabled]="usersPage.last">
-                <a class="page-link" href="#" (click)="$event.preventDefault(); onPageChange(usersPage.number + 1)">Successiva</a>
+              <li class="page-item" [class.disabled]="pageData.last">
+                <a class="page-link rounded-end" href="#"
+                   (click)="$event.preventDefault(); onPageChange(pageData.number + 1)">Successiva</a>
               </li>
             </ul>
-            <span class="ms-3 my-auto text-muted">Totale Utenti: {{ usersPage.totalElements }}</span>
+            <span class="ms-3 my-1 text-muted">Totale Utenti: {{ pageData.totalElements }}</span>
           </nav>
         </div>
 
         <ng-template #noUsers>
-          <div class="alert alert-info text-center">Nessun utente trovato.</div>
+          <div class="alert alert-info text-center rounded">Nessun utente trovato.</div>
         </ng-template>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" [class.show]="showDeleteModal" [style.display]="showDeleteModal ? 'block' : 'none'"
+     tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered rounded">
+    <div class="modal-content rounded">
+      <div class="modal-header bg-danger text-white rounded-top">
+        <h5 class="modal-title" id="deleteModalLabel">Conferma Eliminazione Utente</h5>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="cancelDelete()"></button>
+      </div>
+      <div class="modal-body">
+        Sei sicuro di voler eliminare l'account di <strong class="text-danger">{{ userToDelete?.username }}</strong>?
+        Questa operazione è irreversibile.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary rounded-pill" (click)="cancelDelete()">Annulla</button>
+        <button type="button" class="btn btn-danger rounded-pill" (click)="proceedDelete()">Elimina</button>
       </div>
     </div>
   </div>

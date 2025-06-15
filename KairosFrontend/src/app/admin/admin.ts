@@ -1,5 +1,5 @@
-import {Component, OnInit} from '@angular/core';
-import {Page, UserDTO, UsersService} from '../services';
+import {Component, OnDestroy, OnInit} from '@angular/core';
+import {AuthenticationService, Page, UserDTO, UsersService} from '../services';
 import {
   BehaviorSubject,
   catchError,
@@ -10,9 +10,8 @@ import {
   switchMap,
   tap
 } from 'rxjs';
-import {Profile} from '../profile/profile';
 import {FormsModule} from '@angular/forms';
-import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
+import {AsyncPipe, NgClass, NgForOf, NgIf} from '@angular/common';
 
 @Component({
   selector: 'app-admin',
@@ -20,13 +19,14 @@ import {AsyncPipe, NgForOf, NgIf} from '@angular/common';
     FormsModule,
     NgForOf,
     NgIf,
-    AsyncPipe
+    AsyncPipe,
+    NgClass
   ],
   templateUrl: './admin.html',
   styleUrl: './admin.css'
 })
-export class Admin implements OnInit {
-  usersPage$: Observable<Page> | undefined;
+export class Admin implements OnInit, OnDestroy {
+  usersPage: BehaviorSubject<Page | null> = new BehaviorSubject<Page | null>(null);
   isLoading: boolean = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
@@ -49,12 +49,31 @@ export class Admin implements OnInit {
     {value: 'lastName', name: 'Cognome'}
   ];
 
-  constructor(private userService: UsersService, private profileComponent: Profile) {
+  currentUsername: string | null = null;
+
+  showDeleteModal: boolean = false;
+  userToDelete: UserDTO | null = null;
+
+  constructor(private userService: UsersService, private authService: AuthenticationService) {
+  }
+
+  ngOnDestroy(): void {
+    this.usersPage.complete();
+    this.currentUsername = null;
+    console.log('Admin component destroyed.');
   }
 
   ngOnInit(): void {
+    this.authService.getUsername().subscribe({
+      next: (username) => {
+        this.currentUsername = username;
+        console.log('Current username:', username);
+      },
+      error: (error) => {
+        console.error('Error during username retrieval:', error);
+      }
+    });
     this.loadUsers();
-    this.usersPage$?.subscribe()
   }
 
   loadUsers(): void {
@@ -62,7 +81,7 @@ export class Admin implements OnInit {
     this.errorMessage = null;
     this.successMessage = null;
 
-    this.usersPage$ = combineLatest([
+    combineLatest([
       this.pageSubject.asObservable(),
       this.sizeSubject.asObservable(),
       this.sortBySubject.asObservable(),
@@ -86,6 +105,10 @@ export class Admin implements OnInit {
           })
         );
       })
+    ).subscribe(
+      (pageData: Page) => {
+        this.usersPage.next(pageData);
+      }
     );
   }
 
@@ -118,17 +141,15 @@ export class Admin implements OnInit {
   }
 
   toggleRole(user: UserDTO, role: string): void {
-    if (this.isCurrentUser(user.id)) {
+    if (this.isCurrentUser(user.username)) {
       this.errorMessage = "Non puoi rimuovere il tuo ruolo.";
       return;
     }
 
-    user.role = role;
-
     this.updateUser(user.id, role, 'roles');
   }
 
-  updateUser(userId: number, newValue: any, type: 'roles' | 'delete'): void {
+  updateUser(userId: string, newValue: any, type: 'roles' | 'delete'): void {
     this.isLoading = true;
     this.errorMessage = null;
     this.successMessage = null;
@@ -145,20 +166,46 @@ export class Admin implements OnInit {
           break;
         default:
           this.errorMessage = `Ruolo non supportato.`;
+          this.isLoading = false;
           throw new Error(`Unsupported role ${newValue}.`);
       }
     } else if (type === 'delete') {
       operation = this.userService.deleteUser(userId);
     } else {
       this.errorMessage = `Operazione non supportata.`;
+      this.isLoading = false;
       throw new Error(`Unsupported operation ${type}.`);
     }
 
     operation.subscribe({
       next: () => {
         this.isLoading = false;
-        this.successMessage = `Utente ${type === 'roles' ? 'ruoli aggiornati' : 'eliminato'} con successo!`;
-        this.loadUsers();
+        this.successMessage = `${type === 'roles' ? 'Ruolo aggiornato' : 'Utente eliminato'} con successo!`;
+
+        const currentPageData = this.usersPage.getValue();
+        if (currentPageData) {
+          if (type === 'roles') {
+            const updatedContent = currentPageData.content.map((user: UserDTO) => {
+              if (user.id === userId) {
+
+                return {...user, role: newValue};
+              }
+              return user;
+            });
+
+            this.usersPage.next({...currentPageData, content: updatedContent});
+          } else if (type === 'delete') {
+            const updatedContent = currentPageData.content.filter((user: UserDTO) => user.id !== userId);
+
+            const updatedTotalElements = currentPageData.totalElements - 1;
+
+            this.usersPage.next({...currentPageData, content: updatedContent, totalElements: updatedTotalElements});
+
+            if (updatedContent.length === 0 && this.currentPage > 0) {
+              this.onPageChange(this.currentPage - 1);
+            }
+          }
+        }
       },
       error: (error) => {
         this.isLoading = false;
@@ -169,20 +216,29 @@ export class Admin implements OnInit {
   }
 
   confirmDelete(user: UserDTO): void {
-    if (this.isCurrentUser(user.id)) {
+    if (this.isCurrentUser(user.username)) {
       this.errorMessage = "Non puoi eliminare il tuo stesso account!";
       return;
     }
-    if (confirm(`Sei sicuro di voler eliminare l'account di ${user.username}? Questa operazione è irreversibile.`)) {
-      this.updateUser(user.id, null, 'delete');
+    this.userToDelete = user;
+    this.showDeleteModal = true;
+  }
+
+  proceedDelete(): void {
+    if (this.userToDelete) {
+      this.updateUser(this.userToDelete.id, null, 'delete');
+      this.showDeleteModal = false;
+      this.userToDelete = null;
     }
   }
 
-  isCurrentUser(userId: number): boolean {
-    if (!this.profileComponent.currentUser) {
-      this.profileComponent.loadUserProfile();
-    }
-    return this.profileComponent.currentUser?.id === userId;
+  cancelDelete(): void {
+    this.showDeleteModal = false;
+    this.userToDelete = null;
+    this.errorMessage = null;
   }
 
+  isCurrentUser(username: string): boolean {
+    return this.currentUsername === username;
+  }
 }
