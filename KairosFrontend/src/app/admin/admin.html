@@ -59,7 +59,7 @@
 
       <div *ngIf="!isLoading && (usersPage | async) as pageData">
         <div *ngIf="pageData.content && pageData.content.length > 0; else noUsers">
-          <div class="table-responsive">
+          <div class="table-responsive-lg">
             <table class="table table-hover table-striped align-middle rounded-table">
               <thead>
               <tr>
